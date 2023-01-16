@@ -1,0 +1,40 @@
+---
+- name: Install Jenkins
+  hosts: all
+  gather_facts: true
+  become: True
+  become_user: root
+  
+  tasks:
+
+    - name: Install jdk
+      ansible.builtin.apt:
+        name: default-jdk
+        state: present
+        update_cache: yes
+    - name: ensure the jenkins apt repository key is installed
+      apt_key: url=https://pkg.jenkins.io/debian-stable/jenkins.io.key state=present
+      become: yes
+
+    - name: ensure the repository is configured
+      apt_repository: repo='deb https://pkg.jenkins.io/debian-stable binary/' state=present
+      become: yes
+
+    - name: ensure jenkins is installed
+      apt: name=jenkins update_cache=yes
+      become: yes
+
+    - name: ensure jenkins is running
+      service: name=jenkins state=started
+
+    - name: Sleep for 30 seconds and continue with play
+      wait_for: timeout=30
+ 
+    - name: Get init password Jenkins
+      shell: cat /var/lib/jenkins/secrets/initialAdminPassword
+      changed_when: false
+      register: result
+ 
+    - name: Print init password Jenkins
+      debug:
+        var: result.stdout

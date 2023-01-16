@@ -1,0 +1,14 @@
+---
+- name: Install Jenkins
+  hosts: all
+  gather_facts: true
+  become: True
+  become_user: root
+  
+  tasks:
+
+    - name: Copy script keyring.sh
+      copy: src=keyring.sh dest=~/ mode=0777
+      
+    - name: Run script for audit
+      command: sh ~/keyring.sh

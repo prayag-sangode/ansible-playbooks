@@ -8,3 +8,7 @@ $ sudo dnf install ansible
 $ sudo "rpm -qa | grep ansible"
 $ sudo dnf list ansible
 ```
+## Run ansible playbook
+```
+$ ansible-playbook -i host.txt jenkins-ub.yaml
+```

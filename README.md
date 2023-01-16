@@ -1,5 +1,5 @@
 # Ansible Playbooks
-## Ansible Installation pre-requisites
+## Ansible pre-requisites
 - Configure password less ssh 
 ## Ansible Installation on Fedora
 ```

@@ -15,12 +15,12 @@
   - name: install wget
     apt: pkg='wget' state=installed
 
-  - name: install jdk 7
-    apt: pkg='openjdk-7-jdk' state=installed
+  - name: install jdk 8
+    apt: pkg='java-1.8.0-openjdk.x86_64' state=installed
     sudo: true
 
-  - name: set JDK 7 as a default alternative
-    command: update-java-alternatives --set java-1.7.0-openjdk-i386
+  - name: set JDK 8 as a default alternative
+    command: update-java-alternatives --set java-1.8.0-openjdk.x86_64
     sudo: true
 
   - name: create "nexus" group

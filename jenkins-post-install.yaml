@@ -1,0 +1,9 @@
+---
+- name: Install jenkins
+  import_playbook: jenkins-ub.yaml
+
+- name: Install docker
+  import_playbook: docker-ub.yaml
+
+- name: Install google-packages
+  import_playbook: google-packages.yaml

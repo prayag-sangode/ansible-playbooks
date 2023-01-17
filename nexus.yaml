@@ -15,9 +15,11 @@
   - name: install wget
     apt: pkg='wget' state=installed
 
-  - name: install jdk 8
-    apt: pkg='java-1.8.0-openjdk.x86_64' state=installed
-    sudo: true
+  - name: Install jdk
+    ansible.builtin.apt:
+        name: default-jdk
+        state: present
+        update_cache: yes
 
   - name: set JDK 8 as a default alternative
     command: update-java-alternatives --set java-1.8.0-openjdk.x86_64

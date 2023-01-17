@@ -16,5 +16,5 @@ $ sudo apt update && sudo apt install ansible
 ```
 ## Run ansible Jenkins playbook
 ```
-$ ansible-playbook -i host.txt jenkins-ub.yaml
+$ ansible-playbook -i hosts.txt jenkins-ub.yaml
 ```

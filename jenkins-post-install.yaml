@@ -7,3 +7,7 @@
 
 - name: Install google-packages
   import_playbook: google-packages.yaml
+  
+- name: Install helm
+  import_playbook: helm-install.yaml
+  

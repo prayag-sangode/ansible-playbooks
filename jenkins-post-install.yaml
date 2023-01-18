@@ -11,3 +11,6 @@
 - name: Install helm
   import_playbook: helm-install.yaml
   
+#- name: Add jenkins user to sudoers
+
+  

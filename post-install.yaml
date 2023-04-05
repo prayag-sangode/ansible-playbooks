@@ -1,0 +1,26 @@
+---
+- name: Post Install Steps
+  hosts: all
+  gather_facts: true
+  become: True
+  become_user: root
+  tasks:
+    - name: Set a hostname specifying strategy
+      ansible.builtin.hostname:
+        name: k8s-master.example.com
+        use: systemd
+
+    - name: Add the user
+      ansible.builtin.user:
+        name: prayag
+        shell: /bin/bash
+        append: yes
+
+
+    - name: Give sudo access to user prayag
+      blockinfile:
+        path: /etc/sudoers
+        insertafter: 'root    ALL=(ALL)       ALL'
+        block: |
+          # Gives sudo access to prayag
+          prayag        ALL=(ALL)       NOPASSWD: ALL

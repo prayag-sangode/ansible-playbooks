@@ -16,11 +16,16 @@
         shell: /bin/bash
         append: yes
 
+    - name: 'prayag' for passwordless sudo
+      lineinfile:
+        dest: /etc/sudoers
+        line: 'prayag ALL=(ALL) NOPASSWD: ALL'
+        validate: 'visudo -cf %s'
 
-    - name: Give sudo access to user prayag
-      blockinfile:
-        path: /etc/sudoers
-        insertafter: 'root    ALL=(ALL)       ALL'
-        block: |
-          # Gives sudo access to prayag
-          prayag        ALL=(ALL)       NOPASSWD: ALL
+    #- name: Give sudo access to user prayag
+    #  blockinfile:
+    #    path: /etc/sudoers
+    #    insertafter: 'root    ALL=(ALL)       ALL'
+    #    block: |
+    #      # Gives sudo access to prayag
+    #     prayag        ALL=(ALL)       NOPASSWD: ALL

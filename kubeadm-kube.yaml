@@ -1,0 +1,88 @@
+---
+- name: Kubernetes using Kubeadm
+  hosts: all
+  gather_facts: true
+  become: True
+  become_user: root
+  tasks:
+    - name: Set hostname
+      ansible.builtin.hostname:
+        name: management-node.example.com
+        use: systemd
+
+    - name: This command will change the working directory to somedir/
+      ansible.builtin.shell:
+        cmd: swapoff -a
+
+    - name: Add module
+      community.general.modprobe:
+        name: "{{ item }}"
+        state: present
+      loop:
+           - overlay
+           - br_netfilter
+
+    - name: Touch a file /etc/modules-load.d/containerd.conf
+      ansible.builtin.file:
+        path: /etc/modules-load.d/containerd.conf
+        state: touch
+
+    - name: Add module
+      ansible.builtin.lineinfile:
+        dest: /etc/modules-load.d/containerd.conf
+        line: "{{ item }}"
+      loop:
+           - 'overlay'
+           - 'br_netfilter'
+
+    - name: Touch a file /etc/sysctl.d/99-kubernetes-cri.conf
+      ansible.builtin.file:
+        path: /etc/sysctl.d/99-kubernetes-cri.conf
+        state: touch
+
+    - name: Add module
+      ansible.builtin.lineinfile:
+        dest: /etc/sysctl.d/99-kubernetes-cri.conf
+        line: "{{ item }}"
+      loop:
+           - 'net.bridge.bridge-nf-call-iptables = 1'
+           - 'net.ipv4.ip_forward = 1'
+           - 'net.bridge.bridge-nf-call-ip6tables = 1'
+
+    - name: Installing packages
+      ansible.builtin.apt: pkg={{ item }}
+      loop:
+        - containerd
+
+    - name: Add an Apt signing key, uses whichever key is at the URL
+      ansible.builtin.apt_key:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        state: present
+
+    - name: Touch a file /etc/apt/sources.list.d/kubernetes.list
+      ansible.builtin.file:
+        path: /etc/apt/sources.list.d/kubernetes.list
+        state: touch
+
+    - name: Add repo
+      ansible.builtin.lineinfile:
+        dest: /etc/apt/sources.list.d/kubernetes.list
+        line: "{{ item }}"
+      loop:
+           - 'deb https://apt.kubernetes.io/ kubernetes-xenial main'
+
+    - name: Installing packages
+      ansible.builtin.apt: pkg={{ item }}
+      loop:
+        - kubelet=1.23.0-00
+        - kubeadm=1.23.0-00
+        - kubectl=1.23.0-00
+
+     - name: Hold kubeadm
+       ansible.builtin.dpkg_selections:
+         name: "{{ item }}"
+         selection: hold
+       loop:
+         - kubelet
+         - kubeadm
+         - kubectl

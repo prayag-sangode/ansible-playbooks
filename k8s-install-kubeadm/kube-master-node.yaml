@@ -1,6 +1,6 @@
 ---
 - name: On Master Node - Installing Kubernetes using Kubeadm
-  hosts: master
+  hosts: masters
   gather_facts: true
   become: True
   become_user: root

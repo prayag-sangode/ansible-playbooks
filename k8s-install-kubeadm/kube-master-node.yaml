@@ -1,0 +1,28 @@
+---
+- name: On Master Node - Installing Kubernetes using Kubeadm
+  hosts: master
+  gather_facts: true
+  become: True
+  become_user: root
+  tasks:
+
+    - name: Initializes a Kubernetes control-plane node.
+      ansible.builtin.shell:
+        cmd: sudo kubeadm init --pod-network-cidr 192.168.0.0/16 --kubernetes-version 1.23.0
+
+    - name: Create .kube 
+      ansible.builtin.shell:
+        cmd: mkdir -p $HOME/.kube
+
+    - name: Kube config file 
+      ansible.builtin.shell:
+        cmd: sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+
+    - name: Change ownership
+      ansible.builtin.shell:
+        cmd: sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+    - name: Calcio Kubernetes Container Network Interface (CNI) 
+      ansible.builtin.shell:
+        cmd: kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.25.1/manifests/calico.yaml
+

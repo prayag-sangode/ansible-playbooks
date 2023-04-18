@@ -20,7 +20,7 @@
   become: True
   become_user: root
   tasks:
-
+    - set_fact: var_two="test
     - name: join cluster
       shell: "{{ hostvars['masters'].join_command }} >> node_joined.txt"
       args:

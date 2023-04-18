@@ -43,6 +43,12 @@
       ansible.builtin.shell:
         cmd: sudo sysctl --system
 
+        
+    - name: Installing containerd package
+      ansible.builtin.apt: pkg={{ item }}
+      loop:
+        - containerd 
+
     - name: Create a directory if it does not exist
       ansible.builtin.file:
         path: /etc/containerd
@@ -92,6 +98,10 @@
         line: "{{ item }}"
       loop:
         - 'deb https://apt.kubernetes.io/ kubernetes-xenial main'
+
+    - name: sysctl to modify kernel parameters
+      ansible.builtin.shell:
+        cmd: sudo apt update
 
     - name: Installing packages
       ansible.builtin.apt: pkg={{ item }}

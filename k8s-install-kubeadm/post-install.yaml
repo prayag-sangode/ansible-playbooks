@@ -26,9 +26,9 @@
          - prayag
          - devops
 
-    - name: create config file
-      ansible.builtin.shell:
-        cmd: sudo apt update
+    - name: Apt update
+      shell: apt-get update
+
            
     - name: Installing packages
       ansible.builtin.apt: pkg={{ item }}

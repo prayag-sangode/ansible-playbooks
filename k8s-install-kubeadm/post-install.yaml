@@ -5,10 +5,10 @@
   become: True
   become_user: root
   tasks:
-    - name: Set hostname
-      ansible.builtin.hostname:
-        name: management-node.example.com
-        use: systemd
+    #- name: Set hostname
+    #  ansible.builtin.hostname:
+    #    name: management-node.example.com
+    #    use: systemd
 
     - name: Add users
       ansible.builtin.user:

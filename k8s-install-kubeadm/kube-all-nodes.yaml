@@ -109,6 +109,11 @@
           #- kubeadm=1.23.0-00
           #- kubectl=1.23.0-00
 
+    - name: Sleep for 300 seconds and continue with play
+      ansible.builtin.wait_for:
+        timeout: 300
+      delegate_to: localhost
+
     - name: Hold kubeadm
       ansible.builtin.dpkg_selections:
         name: "{{ item }}"

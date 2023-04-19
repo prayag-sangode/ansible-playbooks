@@ -1,0 +1,12 @@
+---
+- name: Post Install Steps
+  hosts: webserver
+  gather_facts: true
+  become: True
+  become_user: root
+  tasks:
+           
+    - name: Installing oscap package
+      ansible.builtin.yum: pkg={{ item }}
+      loop:
+        - openscap-scanner

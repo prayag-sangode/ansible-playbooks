@@ -1,13 +1,13 @@
 ---
 - name: Post Install Steps
-  hosts: all
+  hosts: openscap
   gather_facts: true
   become: True
   become_user: root
   tasks:
     - name: Set hostname
       ansible.builtin.hostname:
-        name: management-node.example.com
+        name: openscap.example.com
         use: systemd
 
     - name: Add users
@@ -26,17 +26,14 @@
          - prayag
          - devops
 
-    - name: apt update
-      ansible.builtin.shell:
-        cmd: sudo apt update
-
-    - name: Sleep for 300 seconds and continue with play
+    - name: Sleep for 100 seconds and continue with play
       ansible.builtin.wait_for:
-        timeout: 300
+        timeout: 100
       delegate_to: localhost    
            
     - name: Installing packages
-      ansible.builtin.apt: pkg={{ item }}
+      ansible.builtin.yum: pkg={{ item }}
       loop:
         - python3
         - python3-pip
+        - epel-release

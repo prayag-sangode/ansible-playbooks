@@ -1,0 +1,32 @@
+---
+- name: Post Install Steps
+  hosts: openscap
+  gather_facts: true
+  become: True
+  become_user: root
+  tasks:
+
+    - name: Install the 'Server with GUI' package group
+      ansible.builtin.dnf:
+        name: '@Server with GUI'
+        state: present
+
+    - name: Installing packages
+      ansible.builtin.yum: pkg={{ item }}
+      loop:
+        - xrdp
+
+    - name: Restart service xrdp, in all cases
+      ansible.builtin.service:
+        name: xrdp
+        state: restarted
+
+    - name: Enable service xrdp, and not touch the state
+      ansible.builtin.service:
+        name: xrdp
+        enabled: yes         
+
+    - name: Reboot a machine
+      ansible.builtin.reboot:
+        reboot_timeout: 60
+

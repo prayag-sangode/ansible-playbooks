@@ -1,0 +1,43 @@
+---
+- name: nfs client and autofs 
+  hosts: nfs-client
+  gather_facts: true
+  become: True
+  become_user: root
+  tasks:
+
+    - name: apt update
+      ansible.builtin.shell:
+        cmd: sudo apt update
+
+    - name: Installing packages
+      ansible.builtin.apt: pkg={{ item }}
+      loop:
+        - nfs-common
+        - autofs
+
+    - name: Add a line
+      lineinfile:
+        dest: /etc/auto.master
+        line: '/-    /etc/auto.mount'
+
+    - name: Touch file /etc/auto.mount
+      ansible.builtin.file:
+        path: /etc/auto.mount
+        state: touch
+
+    - name: Add a line
+      lineinfile:
+        dest: /etc/auto.mount
+        line: '/mnt   -fstype=nfs,rw  192.168.200.47:/home/nfsshare'
+
+    - name: Restart service containerd
+      ansible.builtin.service:
+        name: autofs
+        state: restarted
+
+    - name: Enable service httpd, and not touch the state
+      ansible.builtin.service:
+        name: autofs
+        enabled: yes    
+

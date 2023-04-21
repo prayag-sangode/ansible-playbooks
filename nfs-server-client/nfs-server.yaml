@@ -1,0 +1,55 @@
+---
+- name: Installing nfs server
+  hosts: nfs-server
+  gather_facts: true
+  become: True
+  become_user: root
+  tasks:
+
+    - name: apt update
+      ansible.builtin.shell:
+        cmd: sudo apt update
+
+    - name: Installing packages
+      ansible.builtin.apt: pkg={{ item }}
+      loop:
+        - nfs-kernel-server
+
+    - name: Create a directory if it does not exist
+      ansible.builtin.file:
+        path: /home/nfsshare
+        state: directory
+
+    - name: Give permissions 
+      ansible.builtin.file:
+        path: /home/nfsshare
+        owner: root
+        group: root
+        mode: '1777'
+
+    - name: apt update
+      ansible.builtin.shell:
+        cmd: sudo chown -R nobody:nogroup /home/nfsshare
+
+    - name: Add a line
+      lineinfile:
+        dest: /etc/exports
+        line: '/home/nfsshare      *(rw,sync,no_root_squash)'
+
+    - name: Restart service nfs-server
+      ansible.builtin.service:
+        name: nfs-server
+        state: restarted
+
+    - name: Enable service nfs-server, and not touch the state
+      ansible.builtin.service:
+        name: nfs-server
+        enabled: yes    
+
+    - name: Ensure we have our own comment added to /etc/services
+      ansible.builtin.lineinfile:
+        path: /etc/idmapd.conf
+        regexp: '^Domain'
+        insertbefore: '^# Domain '
+        line: 'Domain = example.com'
+

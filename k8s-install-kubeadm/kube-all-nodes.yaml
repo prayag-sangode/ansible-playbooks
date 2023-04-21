@@ -75,6 +75,10 @@
 
     - name: sysctl to modify kernel parameters
       ansible.builtin.shell:
+        cmd: sudo sysctl --system
+
+    - name: apt update
+      ansible.builtin.shell:
         cmd: sudo apt update
 
     - name: Installing packages

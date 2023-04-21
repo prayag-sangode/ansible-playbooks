@@ -8,7 +8,7 @@
 
     - name: Initializes a Kubernetes control-plane node.
       ansible.builtin.shell:
-        cmd: sudo kubeadm init --pod-network-cidr 192.168.0.0/16 --kubernetes-version 1.25.0
+        cmd: sudo kubeadm init --pod-network-cidr 192.168.0.0/16 --kubernetes-version 1.25.0 
     - name: Create .kube 
       ansible.builtin.shell:
         cmd: mkdir -p $HOME/.kube

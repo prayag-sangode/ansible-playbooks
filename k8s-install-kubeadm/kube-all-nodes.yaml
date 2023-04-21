@@ -118,9 +118,9 @@
         #  - kubeadm=1.25.0-00
         #  - kubectl=1.25.0-00 
 
-    - name: Sleep for 300 seconds and continue with play
+    - name: Sleep for 60 seconds and continue with play
       ansible.builtin.wait_for:
-        timeout: 300
+        timeout: 60
       delegate_to: localhost
 
       #    - name: Hold kubeadm

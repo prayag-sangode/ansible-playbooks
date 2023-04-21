@@ -1,6 +1,6 @@
 ---
 - name: Install helm
-  hosts: masters
+  hosts: all
   gather_facts: true
   become: True
   become_user: root

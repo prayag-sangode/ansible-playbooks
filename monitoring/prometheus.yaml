@@ -1,23 +1,26 @@
 ---
-- name: On all nodes - Installing Kubernetes using Kubeadm
-  hosts: all
+- name: Prometheus installation
+  hosts: masters
   gather_facts: true
   become: True
   become_user: root
   tasks:
 
-    - name: Add prometheus-community repo
+    - name: Add prometheus-community chart repo
       kubernetes.core.helm_repository:
         name: prometheus-community
         repo_url: "https://prometheus-community.github.io/helm-charts"
-          
-    - name: Deploy latest version of Prometheus chart inside monitoring namespace (and create it)
-      kubernetes.core.helm:
-        name: prometheus
-        chart_ref: prometheus-community/prometheus
-        release_namespace: monitoring
-        create_namespace: true          
-        values_files:
-          - prometheus-values.yaml
 
+#    - name: Copy values file
+#      ansible.builtin.copy:
+#        src: /path/to/values.yaml
+#        dest: /path/to/values.yaml
+
+    - name: Deploy Prometheus chart 
+      kubernetes.core.helm:
+        name: kube-prometheus-stack
+        chart_ref: prometheus-community/kube-prometheus-stack
+        release_namespace: monitoring
+        #values_files:
+          #- /path/to/values.yaml
 

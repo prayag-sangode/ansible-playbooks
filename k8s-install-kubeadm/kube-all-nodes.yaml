@@ -117,6 +117,9 @@
         #  - kubelet=1.25.0-00 
         #  - kubeadm=1.25.0-00
         #  - kubectl=1.25.0-00 
+    - name: Install bottle python package
+      ansible.builtin.pip:
+        name: kubernetes
 
     - name: Sleep for 60 seconds and continue with play
       ansible.builtin.wait_for:

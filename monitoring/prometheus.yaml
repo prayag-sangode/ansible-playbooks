@@ -6,21 +6,29 @@
   become_user: root
   tasks:
 
+    - name: Create a k8s namespace
+      kubernetes.core.k8s:
+        name: monitoring
+        api_version: v1
+        kind: Namespace
+        state: present          
+
     - name: Add prometheus-community chart repo
       kubernetes.core.helm_repository:
         name: prometheus-community
-        repo_url: "https://prometheus-community.github.io/helm-charts"
+        repo_url: "https://prometheus-community.github.io/helm-charts/"
 
-#    - name: Copy values file
-#      ansible.builtin.copy:
-#        src: /path/to/values.yaml
-#        dest: /path/to/values.yaml
+    - name: Copy values file
+      ansible.builtin.copy:
+        src: /root/prometheus-values.yaml
+        dest: /root/prometheus-values.yaml
+        remote_src: yes
 
     - name: Deploy Prometheus chart 
       kubernetes.core.helm:
         name: kube-prometheus-stack
         chart_ref: prometheus-community/kube-prometheus-stack
         release_namespace: monitoring
-        #values_files:
-          #- /path/to/values.yaml
+        values_files:
+          - /root/prometheus-values.yaml
 

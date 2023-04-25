@@ -1,0 +1,39 @@
+---
+- name: NFS external provisioner installation
+  hosts: masters
+  gather_facts: true
+  become: True
+  become_user: root
+  tasks:
+
+    - name: Create a k8s namespace
+      kubernetes.core.k8s:
+        name: nfsstorage
+        api_version: v1
+        kind: Namespace
+        state: present
+
+    - name: Add nfs-subdir-external-provisioner chart repo
+      kubernetes.core.helm_repository:
+        name: nfs-subdir-external-provisioner
+        repo_url: "https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/"
+
+    - name: Copy values file
+      ansible.builtin.copy:
+        src: /root/nfs-subdir-external-provisioner-values.yaml
+        dest: /root/nfs-subdir-external-provisioner-values.yaml
+        remote_src: yes
+
+    - name: helm repo update
+      ansible.builtin.shell:
+        cmd: helm repo update
+
+
+    - name: Deploy nfs-subdir-external-provisioner chart 
+      kubernetes.core.helm:
+        name: nfs-subdir-external-provisioner
+        chart_ref: nfs-subdir-external-provisioner/nfs-subdir-external-provisioner
+        release_namespace: nfsstorage
+        values_files:
+          - /root/nfs-subdir-external-provisioner-values.yaml
+

@@ -1,0 +1,70 @@
+---
+- name: Install MicroK8s on Ubuntu 22.04 for specified user
+  hosts: localhost
+  become: yes
+  gather_facts: yes
+
+  vars:
+    microk8s_user: jenkins  # Change this to your desired user
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install snapd if not installed
+      apt:
+        name: snapd
+        state: present
+
+    - name: Install MicroK8s snap package
+      snap:
+        name: microk8s
+        classic: yes
+        state: present
+        channel: latest/stable
+
+    - name: Ensure MicroK8s is started and enabled
+      command: microk8s start
+      changed_when: false
+
+    - name: Add user "{{ microk8s_user }}" to microk8s group
+      user:
+        name: "{{ microk8s_user }}"
+        groups: microk8s
+        append: yes
+
+    - name: Wait for MicroK8s to be ready
+      command: microk8s status --wait-ready
+      retries: 10
+      delay: 10
+      register: microk8s_status
+      until: microk8s_status.rc == 0
+
+    - name: Enable MicroK8s addons (dns, storage)
+      command: microk8s enable dns storage
+      changed_when: false
+
+    - name: Set kube config directory based on user
+      set_fact:
+        kube_dir: "{{ '/var/lib/jenkins/.kube' if microk8s_user == 'jenkins' else '/home/' + microk8s_user + '/.kube' }}"
+
+    - name: Create .kube directory for user "{{ microk8s_user }}"
+      file:
+        path: "{{ kube_dir }}"
+        state: directory
+        owner: "{{ microk8s_user }}"
+        group: "{{ microk8s_user }}"
+        mode: '0755'
+
+    - name: Get MicroK8s kubeconfig content as user "{{ microk8s_user }}"
+      shell: sudo -u {{ microk8s_user }} microk8s config
+      register: kubeconfig_output
+
+    - name: Write kubeconfig file for user "{{ microk8s_user }}"
+      copy:
+        content: "{{ kubeconfig_output.stdout }}"
+        dest: "{{ kube_dir }}/config"
+        owner: "{{ microk8s_user }}"
+        group: "{{ microk8s_user }}"
+        mode: '0600'

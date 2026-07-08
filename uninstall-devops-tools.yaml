@@ -1,0 +1,198 @@
+---
+- name: Uninstall DevOps Tools
+  hosts: localhost
+  gather_facts: true
+  become: true
+
+  vars:
+    remove_awscli: true
+    remove_helm: true
+    remove_eksctl: true
+    remove_kubectl: true
+    remove_docker: true
+    remove_microk8s: true
+    remove_terraform: true
+
+    normal_user: ubuntu
+
+  tasks:
+
+    ####################################################################
+    # Stop Docker
+    ####################################################################
+
+    - name: Stop Docker
+      systemd:
+        name: docker
+        state: stopped
+      ignore_errors: yes
+      when: remove_docker
+
+    ####################################################################
+    # Remove MicroK8s
+    ####################################################################
+
+    - name: Stop MicroK8s
+      command: microk8s stop
+      ignore_errors: yes
+      when: remove_microk8s
+
+    - name: Remove MicroK8s snap
+      snap:
+        name: microk8s
+        state: absent
+      ignore_errors: yes
+      when: remove_microk8s
+
+    - name: Remove user from microk8s group
+      command: gpasswd -d {{ normal_user }} microk8s
+      ignore_errors: yes
+      when: remove_microk8s
+
+    - name: Remove kube directory
+      file:
+        path: "/home/{{ normal_user }}/.kube"
+        state: absent
+      when: remove_microk8s
+
+    ####################################################################
+    # Remove kubectl
+    ####################################################################
+
+    - name: Remove kubectl
+      file:
+        path: /usr/local/bin/kubectl
+        state: absent
+      when: remove_kubectl
+
+    ####################################################################
+    # Remove eksctl
+    ####################################################################
+
+    - name: Remove eksctl
+      file:
+        path: /usr/local/bin/eksctl
+        state: absent
+      when: remove_eksctl
+
+    ####################################################################
+    # Remove Helm
+    ####################################################################
+
+    - name: Remove helm binary
+      file:
+        path: /usr/local/bin/helm
+        state: absent
+      when: remove_helm
+
+    ####################################################################
+    # Remove AWS CLI
+    ####################################################################
+
+    - name: Remove AWS CLI
+      command: /usr/local/bin/aws/install --uninstall
+      ignore_errors: yes
+      when: remove_awscli
+
+    - name: Remove AWS CLI leftovers
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /usr/local/bin/aws
+        - /usr/local/bin/aws_completer
+        - /usr/local/aws-cli
+      when: remove_awscli
+
+    ####################################################################
+    # Remove Docker
+    ####################################################################
+
+    - name: Remove Docker packages
+      apt:
+        name:
+          - docker.io
+        state: absent
+        purge: yes
+        autoremove: yes
+      when: remove_docker
+
+    - name: Remove Docker data
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /var/lib/docker
+        - /etc/docker
+        - /var/run/docker.sock
+      when: remove_docker
+
+    ####################################################################
+    # Remove temporary files
+    ####################################################################
+
+    - name: Remove temp files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /tmp/aws
+        - /tmp/awscliv2.zip
+        - /tmp/get_helm.sh
+        - /tmp/eksctl
+        - /tmp/eksctl.tar.gz
+
+    ####################################################################
+    # Clean apt cache
+    ####################################################################
+
+    - name: Autoremove unused packages
+      apt:
+        autoremove: yes
+        autoclean: yes
+
+    ####################################################################
+    # Final Message
+    ####################################################################
+
+    - name: Finished
+      debug:
+        msg:
+          - "======================================"
+          - "DevOps tools have been removed."
+          - "Logout/Login is recommended."
+          - "======================================"
+    ####################################################################
+    # Remove Terraform
+    ####################################################################
+
+    - name: Remove Terraform package
+      apt:
+        name: terraform
+        state: absent
+        purge: yes
+      when: remove_terraform
+
+    - name: Remove HashiCorp APT repository
+      apt_repository:
+        filename: hashicorp
+        state: absent
+      when: remove_terraform
+
+    - name: Remove HashiCorp GPG key
+      file:
+        path: /usr/share/keyrings/hashicorp-archive-keyring.gpg
+        state: absent
+      when: remove_terraform
+
+    - name: Remove downloaded HashiCorp GPG file
+      file:
+        path: /tmp/hashicorp.gpg
+        state: absent
+      when: remove_terraform
+
+    - name: Update apt cache after removing HashiCorp repository
+      apt:
+        update_cache: yes
+      when: remove_terraform
+ubuntu@managed-node:~$

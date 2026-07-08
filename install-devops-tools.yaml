@@ -1,0 +1,288 @@
+---
+- name: Install DevOps Tools
+  hosts: localhost
+  gather_facts: true
+  become: true
+
+  vars:
+    install_awscli: true
+    install_helm: true
+    install_eksctl: true
+    install_kubectl: true
+    install_docker: true
+    install_jenkins: true
+    install_microk8s: true
+    install_terraform: true
+
+    normal_user: ubuntu
+
+  tasks:
+
+    # Update Packages
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    # AWS CLI
+
+    - name: Install unzip
+      apt:
+        name: unzip
+        state: present
+      when: install_awscli
+
+    - name: Download AWS CLI
+      get_url:
+        url: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+        dest: /tmp/awscliv2.zip
+      when: install_awscli
+
+    - name: Extract AWS CLI
+      unarchive:
+        src: /tmp/awscliv2.zip
+        dest: /tmp
+        remote_src: yes
+      when: install_awscli
+
+    - name: Check AWS CLI
+      command: aws --version
+      register: awscli_check
+      ignore_errors: yes
+      changed_when: false
+      when: install_awscli
+
+    - name: Install AWS CLI
+      command: ./aws/install --update
+      args:
+        chdir: /tmp
+      when:
+        - install_awscli
+        - awscli_check.rc != 0
+
+    # Helm
+
+    - name: Download Helm installer
+      get_url:
+        url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+        dest: /tmp/get_helm.sh
+        mode: "0755"
+      when: install_helm
+
+    - name: Install Helm
+      command: /tmp/get_helm.sh
+      when: install_helm
+
+    # eksctl
+
+    - name: Download eksctl
+      get_url:
+        url: https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz
+        dest: /tmp/eksctl.tar.gz
+      when: install_eksctl
+
+    - name: Extract eksctl
+      unarchive:
+        src: /tmp/eksctl.tar.gz
+        dest: /tmp
+        remote_src: yes
+      when: install_eksctl
+
+    - name: Install eksctl
+      copy:
+        src: /tmp/eksctl
+        dest: /usr/local/bin/eksctl
+        mode: "0755"
+        remote_src: yes
+      when: install_eksctl
+
+    # kubectl
+
+    - name: Download kubectl
+      get_url:
+        url: https://dl.k8s.io/release/v1.30.0/bin/linux/amd64/kubectl
+        dest: /usr/local/bin/kubectl
+        mode: "0755"
+      when: install_kubectl
+
+    # Docker
+
+    - name: Install Docker packages
+      apt:
+        name:
+          - docker.io
+          - curl
+          - ca-certificates
+        state: present
+      when: install_docker
+
+    - name: Enable Docker
+      systemd:
+        name: docker
+        enabled: yes
+        state: started
+      when: install_docker
+
+    - name: Add ubuntu to docker group
+      user:
+        name: "{{ normal_user }}"
+        groups: docker
+        append: yes
+      when: install_docker
+
+    - name: Add jenkins to docker group
+      user:
+        name: jenkins
+        groups: docker
+        append: yes
+      ignore_errors: yes
+      when:
+        - install_docker
+        - install_jenkins
+
+    # snapd
+
+    - name: Install snapd
+      apt:
+        name: snapd
+        state: present
+      when: install_microk8s
+
+    - name: Enable snapd
+      systemd:
+        name: snapd
+        enabled: yes
+        state: started
+      when: install_microk8s
+
+    # MicroK8s
+
+    - name: Install MicroK8s
+      snap:
+        name: microk8s
+        classic: yes
+        state: present
+      when: install_microk8s
+
+    - name: Wait after MicroK8s installation
+      pause:
+        seconds: 20
+      when: install_microk8s
+
+    - name: Add ubuntu user to microk8s group
+      user:
+        name: "{{ normal_user }}"
+        groups: microk8s
+        append: yes
+      when: install_microk8s
+
+    - name: Wait for MicroK8s services
+      command: microk8s status --wait-ready
+      register: microk8s_ready
+      retries: 20
+      delay: 10
+      until: microk8s_ready.rc == 0
+      changed_when: false
+      when: install_microk8s
+
+    # kubeconfig
+
+    - name: Create .kube directory
+      file:
+        path: "/home/{{ normal_user }}/.kube"
+        state: directory
+        owner: "{{ normal_user }}"
+        group: "{{ normal_user }}"
+        mode: "0755"
+      when: install_microk8s
+
+    - name: Export kubeconfig
+      shell: |
+        microk8s config > /home/{{ normal_user }}/.kube/config
+        chown {{ normal_user }}:{{ normal_user }} /home/{{ normal_user }}/.kube/config
+        chmod 600 /home/{{ normal_user }}/.kube/config
+      args:
+        executable: /bin/bash
+      when: install_microk8s
+
+    # Convenience alias
+
+    - name: Add kubectl alias
+      lineinfile:
+        path: "/home/{{ normal_user }}/.bashrc"
+        line: "alias mkctl='microk8s kubectl'"
+        create: yes
+      when: install_microk8s
+
+    # Terraform
+
+    - name: Install required packages
+      apt:
+        name:
+          - gpg
+          - gnupg
+        state: present
+        update_cache: yes
+      when: install_terraform
+
+    - name: Download HashiCorp GPG key
+      get_url:
+        url: https://apt.releases.hashicorp.com/gpg
+        dest: /tmp/hashicorp.gpg
+        mode: "0644"
+      when: install_terraform
+
+    - name: Convert GPG key to keyring
+      command:
+        cmd: >
+          gpg --dearmor
+          -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+          /tmp/hashicorp.gpg
+      args:
+        creates: /usr/share/keyrings/hashicorp-archive-keyring.gpg
+      when: install_terraform
+
+    - name: Add HashiCorp APT repository
+      apt_repository:
+        repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
+        filename: hashicorp
+        state: present
+      when: install_terraform
+
+    - name: Update apt cache after adding HashiCorp repository
+      apt:
+        update_cache: yes
+      when: install_terraform
+
+    - name: Install Terraform
+      apt:
+        name: terraform
+        state: present
+      when: install_terraform
+
+    - name: Verify Terraform installation
+      command: terraform -version
+      register: terraform_version
+      changed_when: false
+      when: install_terraform
+
+    - name: Display Terraform version
+      debug:
+        var: terraform_version.stdout_lines
+      when: install_terraform
+
+    # Final reminder
+
+    - name: Display reminder
+      debug:
+        msg:
+          - "=================================================="
+          - "Installation Complete"
+          - ""
+          - "Run the following after login:"
+          - "  newgrp microk8s"
+          - "  kubectl get nodes"
+          - ""
+          - "Or simply logout/login."
+          - "=================================================="
